@@ -1,82 +1,38 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 7 créditos restantes para usar o sistema de feedback AI.
+Você tem 6 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para eduardavieira-dev:
 
 Nota final: **72.1/100**
 
-# Feedback para eduardavieira-dev 🚔💻
+# Feedback para eduardavieira-dev 🚨🕵️‍♂️
 
-Olá, Eduarda! Primeiro, parabéns pelo esforço e pela entrega da sua API para o Departamento de Polícia! 🎉 Seu código mostra uma boa organização e você conseguiu implementar várias funcionalidades importantes, especialmente para os agentes e casos. Vamos juntos destrinchar o que está funcionando bem e onde podemos melhorar para deixar sua API ainda mais robusta e alinhada com as melhores práticas. Bora lá? 🚀
-
----
-
-## 🎉 Pontos Fortes - Você Mandou Bem!
-
-- Sua estrutura de pastas está bem organizada, seguindo o padrão esperado com `routes`, `controllers`, `repositories` e `utils`. Isso é essencial para manter o projeto escalável e fácil de manter. 👏
-
-- Você implementou corretamente os endpoints básicos de leitura (GET) para agentes e casos, incluindo filtros e ordenação simples, o que mostra domínio sobre manipulação de query params e arrays em memória.
-
-- O uso do Zod para validação de dados está presente e você trata erros de validação, retornando status 400 com mensagens claras. Isso é fundamental para APIs robustas!
-
-- A separação clara do tratamento de erros com a classe `ApiError` e o middleware `errorHandler` mostra que você está preocupado(a) com a experiência do consumidor da API.
-
-- Você implementou o endpoint para buscar o agente responsável por um caso (`GET /casos/:caso_id/agente`), que é um recurso bônus importante.
-
-- Também fez filtros por status e agente nos casos, além de ordenar agentes por data de incorporação, o que são funcionalidades extras valiosas!
+Olá, Eduarda! Primeiro, quero parabenizar você pelo esforço e dedicação neste desafio de API para o Departamento de Polícia! 🎉 Seu projeto está bem estruturado, e dá para ver que você entendeu muito bem como organizar rotas, controllers e repositories. Isso já é meio caminho andado para construir APIs robustas e escaláveis. Vamos juntos destrinchar o que está funcionando e onde podemos melhorar para deixar sua API tinindo! ✨
 
 ---
 
-## 🕵️ Análise das Oportunidades de Melhoria
+## 🎯 Pontos Fortes que Merecem Destaque
 
-### 1. Atualização de Agentes e Casos - Proteção do Campo `id`
+- **Arquitetura modular bem aplicada:** Você separou muito bem as rotas (`routes/`), controladores (`controllers/`) e repositórios (`repositories/`). Isso mostra maturidade no desenvolvimento e facilita manutenção.
+  
+- **Implementação dos endpoints principais:** Os endpoints para `/agentes` e `/casos` existem e respondem, com tratamento de erros e validação usando Zod — ótima escolha para garantir integridade dos dados! 👏
 
-**O que eu vi no seu código:**  
-Nos métodos `update` e `partialUpdate` dos controllers e repositories, o campo `id` pode ser alterado via payload, o que não deveria acontecer. Você até tenta proteger contra isso no controller de casos:
+- **Filtros básicos implementados:** Você já entregou filtros para casos por status e agente, além de filtragem de agentes por cargo e ordenação por data de incorporação — isso é um bônus que mostra atenção aos detalhes.
 
-```js
-// controllers/casosController.js - updateCaso
-const { titulo, descricao, status, agente_id, ...rest } = req.body;
+- **Tratamento de erros personalizado:** Você criou uma classe `ApiError` para padronizar erros, o que ajuda bastante na manutenção e clareza das mensagens.
 
-// Protege contra alteração do id
-if ('id' in rest) delete rest.id;
-```
+Você está no caminho certo! Agora vamos conversar sobre os pontos que podem ser ajustados para sua API ficar ainda melhor. 😉
 
-Mas no repositório de agentes, essa proteção não está clara, e o teste detectou que você consegue alterar o `id` do agente com PUT e PATCH.
+---
 
-**Por que isso é importante?**  
-O `id` é o identificador único do recurso. Permitir que ele seja alterado pode causar inconsistência e problemas de integridade dos dados.
+## 🔍 Análise Profunda dos Pontos que Precisam de Atenção
 
-**Como melhorar?**
+### 1. Atualização dos recursos permite alteração do campo `id` — e isso não pode!
 
-- No controller, antes de validar o payload, remova o campo `id` caso ele esteja presente no corpo da requisição.
-- No repository, mesmo que o controller faça a limpeza, adicione uma proteção extra para garantir que o `id` nunca seja modificado.
+**O que eu vi no seu código?**
 
-Exemplo de proteção no controller:
-
-```js
-const updateAgente = (req, res, next) => {
-    const { id } = req.params;
-    try {
-        const { id: idDoPayload, ...dadosSemId } = req.body; // Remove id do payload
-        const data = agenteSchema.parse(dadosSemId);
-        const agenteAtualizado = agentesRepository.update(id, data);
-
-        if (!agenteAtualizado) {
-            throw new ApiError('Agente não encontrado', 404);
-        }
-        res.status(200).json({
-            message: 'Agente atualizado com sucesso',
-            data: agenteAtualizado
-        });
-    } catch (error) {
-        // tratamento de erros...
-    }
-};
-```
-
-E no `agentesRepository.js`, no método `update`:
+No seu `agentesRepository.js`, o método `update` faz isso:
 
 ```js
 const update = (id, newData) => {
@@ -86,7 +42,6 @@ const update = (id, newData) => {
     // Ignorar qualquer id que venha em newData
     const { id: _, ...dadosSemId } = newData;
 
-    // Verifica se todos os campos obrigatórios existem
     const requiredFields = ['nome', 'dataDeIncorporacao', 'cargo'];
     const hasAllFields = requiredFields.every(field => dadosSemId.hasOwnProperty(field));
     if (!hasAllFields) return null; 
@@ -99,106 +54,100 @@ const update = (id, newData) => {
 }
 ```
 
-**Recurso recomendado:**  
-Para entender melhor como proteger campos e validar dados em APIs com Express e Zod, dê uma olhada neste vídeo super didático:  
-👉 [Validação de dados em APIs Node.js/Express com Zod](https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_)
+Aqui você até ignora o `id` que venha no payload, o que é ótimo. Porém, o problema está que no controller, na hora de validar ou aplicar a atualização, você não impede que o campo `id` seja enviado e aceito pelo Zod, e o mesmo acontece no `partialUpdate`.
 
----
+Isso pode permitir, em algumas situações, que o `id` seja modificado, ou pelo menos que o payload contenha esse campo, o que não é desejável.
 
-### 2. Atualização Parcial e Completa - Validação e Consistência
+**Por que isso é importante?**
 
-Nos métodos de atualização (`PUT` e `PATCH`) tanto para agentes quanto para casos, percebi que:
+O `id` é a identidade única do recurso e não deve ser alterado pela API. Permitir sua alteração pode causar inconsistências e bugs difíceis de debugar.
 
-- Você está usando `agenteSchema` e `casoSchema` para validar os dados, o que é ótimo.
-- Porém, no método `update` do repository, você exige que todos os campos obrigatórios estejam presentes, retornando `null` se algum estiver faltando. Isso é correto para `PUT`, mas para `PATCH` (atualização parcial), isso não deve acontecer.
+**Como corrigir?**
 
-No seu código, o `partialUpdate` está ok, pois usa `Object.assign` para atualizar parcialmente.
+- Ajuste o schema Zod para que o campo `id` não seja esperado ou permitido no payload de criação ou atualização.
+- No controller, rejeite qualquer payload que contenha o campo `id`.
+- No repositório, continue ignorando o `id` para garantir segurança.
 
-**Dica:**  
-No controller, para o método `PUT`, certifique-se de que o payload contenha todos os campos obrigatórios para evitar inconsistências.
-
-No método `PATCH`, use o schema `.partial()` do Zod, como você já faz, para validar os campos que vieram.
-
----
-
-### 3. Filtros e Ordenação Avançados para Agentes
-
-Você implementou o filtro por cargo e ordenação por `dataDeIncorporacao` no endpoint `/agentes`, o que é ótimo! Mas os testes indicam que a ordenação decrescente com prefixo `-` pode não estar funcionando corretamente.
-
-No seu código:
+Por exemplo, no schema Zod para agentes, você pode definir:
 
 ```js
-if (sort) {
-    const ordem = sort.startsWith('-') ? -1 : 1;
-    const campo = sort.replace('-', '');
-    if (campo === 'dataDeIncorporacao') {
-        agentes = agentes.sort((a, b) => {
-            const dateA = new Date(a.dataDeIncorporacao);
-            const dateB = new Date(b.dataDeIncorporacao);
-            if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
-            if (isNaN(dateA.getTime())) return 1 * ordem;
-            if (isNaN(dateB.getTime())) return -1 * ordem;
-            return ordem * (dateA - dateB);
-        });
-    }
+const agenteSchema = z.object({
+  nome: z.string().min(2),
+  dataDeIncorporacao: z.string().refine(val => !isNaN(Date.parse(val)), { message: 'Data inválida' }),
+  cargo: z.string().min(2),
+  // Não incluir 'id' no schema de validação do payload
+});
+```
+
+E no controller, antes de validar, faça algo assim:
+
+```js
+if ('id' in req.body) {
+  return res.status(400).json({ message: 'Não é permitido alterar o campo id' });
 }
 ```
 
-**Possível problema:**  
-`dateA - dateB` resulta em um número (milissegundos), mas multiplicar por `ordem` pode não funcionar como esperado se `ordem` for -1. O ideal é fazer a subtração em ordem correta para garantir a ordem decrescente.
+Isso garante que o `id` nunca será alterado.
 
-**Sugestão de ajuste:**
+**Recurso para estudar:**
 
-```js
-return ordem === 1 ? dateA - dateB : dateB - dateA;
-```
-
-Ou simplificar para:
-
-```js
-return ordem * (dateA.getTime() - dateB.getTime());
-```
-
-Assim, a ordenação fica mais clara e correta.
+- Validação de dados e tratamento de erros: https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
+- Status 400 para dados inválidos: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400
 
 ---
 
-### 4. Mensagens de Erro Customizadas e Consistentes
+### 2. Falhas na atualização completa (PUT) e parcial (PATCH) para agentes e casos
 
-Embora você tenha criado a classe `ApiError` e trate erros com status apropriados, a mensagem de erro para argumentos inválidos ainda pode ser mais detalhada e consistente.
+**O que eu vi no seu código?**
 
-Por exemplo, quando um campo obrigatório está faltando, você lança:
+Você implementou os métodos `update` e `partialUpdate` tanto para agentes quanto para casos, mas há algumas sutilezas:
+
+- No método `update` do repositório, você exige que todos os campos obrigatórios estejam presentes, o que é correto para PUT.
+- No controller, você faz a validação Zod no payload completo, o que é adequado.
+- No entanto, os testes indicam que, ao enviar payloads incorretos, o status 400 nem sempre é retornado corretamente.
+
+Por exemplo, no `agentesController.js`:
 
 ```js
-throw new ApiError('Campos obrigatórios: nome, dataDeIncorporacao, cargo', 400);
-```
+const updateAgente = (req, res, next) => {
+    // ...
+    const data = agenteSchema.parse(dadosRecebidos);
+    const agenteAtualizado = agentesRepository.update(id, data);
 
-Isso é ótimo, mas para erros de validação do Zod você retorna diretamente o erro formatado, o que pode gerar mensagens diferentes.
-
-**Dica:**  
-Padronize o formato de resposta de erro para que o cliente da API receba uma estrutura uniforme, facilitando o consumo e a depuração.
-
-Um exemplo de corpo de erro personalizado:
-
-```json
-{
-  "error": {
-    "message": "Dados inválidos",
-    "details": {
-      "nome": "Deve ter pelo menos 2 caracteres",
-      "dataDeIncorporacao": "Data inválida"
+    if (!agenteAtualizado) {
+        throw new ApiError('Agente não encontrado', 404);
     }
-  }
-}
+    res.status(200).json({
+        message: 'Agente atualizado com sucesso',
+        data: agenteAtualizado
+    });
+};
 ```
+
+Se o payload estiver com formato incorreto, o Zod lança erro, e você trata isso, o que é ótimo. Porém, no repositório, se o `update` retornar null (por exemplo, porque campos obrigatórios faltam), você está retornando 404, o que pode confundir.
+
+**Por que isso acontece?**
+
+Se o `update` retorna null porque o payload está incompleto, o correto seria retornar 400 (Bad Request), não 404 (Not Found).
+
+**Como corrigir?**
+
+No controller, diferencie o caso de "recurso não encontrado" do caso de "payload inválido". Uma forma é ajustar o repositório para lançar erros ou retornar códigos diferentes, ou no controller verificar se todos os campos obrigatórios existem antes de chamar o repositório.
+
+Outra dica: no método `update` do repositório, se os campos obrigatórios não estiverem presentes, retorne um erro ou lance uma exceção, para que o controller possa responder com 400.
+
+**Recurso para estudar:**
+
+- Status 400 e 404: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400
+- Tratamento de erros em APIs Node.js: https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
 
 ---
 
-### 5. Endpoint de Busca por Palavras-Chave em Casos
+### 3. Filtros avançados e busca por palavras-chave não implementados completamente
 
-Você implementou o filtro por termo (`q`) no endpoint `/casos` para buscar no título e descrição, mas os testes indicam que essa funcionalidade ainda não está 100%.
+Você implementou filtros básicos para casos e agentes, e isso é ótimo! Porém, percebi que o filtro de busca por palavras-chave no título ou descrição dos casos (`q` no query) não está funcionando conforme esperado.
 
-No seu código:
+No `casosController.js`, você tem:
 
 ```js
 if (q) {
@@ -210,55 +159,145 @@ if (q) {
 }
 ```
 
-**O que pode estar faltando?**
+Isso parece correto, mas os testes indicam que pode estar falhando.
 
-- Verifique se o parâmetro `q` está chegando corretamente na requisição.
-- Confirme se o filtro está sendo aplicado antes de retornar a lista.
-- Teste também com termos que realmente existam nos dados.
+**Por que pode estar falhando?**
 
-Se tudo estiver correto, pode ser um detalhe no teste ou na forma como os dados são manipulados. Caso queira melhorar a busca, pode usar regex ou outras técnicas, mas para o escopo atual, essa implementação já está no caminho certo.
+- Talvez o campo `descricao` ou `titulo` estejam vazios ou não strings em algum caso.
+- Ou pode ser que a query string esteja chegando com espaços ou caracteres especiais.
 
----
+**Como melhorar?**
 
-## 🧭 Recomendações Gerais para Você
+- Garanta que `titulo` e `descricao` sempre sejam strings antes de chamar `.toLowerCase()`.
+- Trate casos com strings vazias ou `null`.
+- Faça um `trim()` na query para evitar espaços em branco.
 
-- Continue usando o Zod para validação, pois ele é poderoso e ajuda a garantir a integridade dos dados.
-- Proteja campos que não devem ser alterados, como `id`, tanto no controller quanto no repository.
-- Padronize suas respostas de erro para facilitar o uso da API.
-- Teste seus endpoints com ferramentas como Postman ou Insomnia para garantir que os filtros, ordenações e validações estão funcionando conforme esperado.
-- Mantenha a organização modular do seu código, isso vai te ajudar muito em projetos maiores.
+Exemplo:
 
----
-
-## 📚 Recursos para Você Aprimorar Ainda Mais
-
-- Para reforçar o uso do Express e rotas:  
-  https://expressjs.com/pt-br/guide/routing.html
-
-- Para entender arquitetura MVC com Node.js:  
-  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH
-
-- Para validação e tratamento de erros com Zod:  
-  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
-
-- Para manipulação de arrays no JavaScript (filter, sort, etc):  
-  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI
+```js
+if (q) {
+    const searchTerm = q.trim().toLowerCase();
+    casos = casos.filter(caso => 
+        (caso.titulo && caso.titulo.toLowerCase().includes(searchTerm)) ||
+        (caso.descricao && caso.descricao.toLowerCase().includes(searchTerm))
+    );
+}
+```
 
 ---
 
-## 📝 Resumo Rápido do Que Você Pode Melhorar
+### 4. Falta do endpoint para buscar o agente responsável por um caso (bonus)
 
-- 🚫 **Não permitir alteração do campo `id`** em atualizações (PUT e PATCH), tanto para agentes quanto para casos.  
-- 🔄 Ajustar a lógica de ordenação por data para funcionar corretamente em ordem crescente e decrescente.  
-- ⚠️ Padronizar mensagens e formato de resposta para erros, garantindo consistência.  
-- 🔍 Confirmar e testar o filtro de busca por palavra-chave (`q`) no endpoint `/casos`.  
-- 🛡️ Proteger dados no repository para evitar alterações indevidas, reforçando a segurança da API.
+Você já criou a rota `/casos/:caso_id/agente` e o controller correspondente, o que é fantástico! Porém, os testes indicam que esse endpoint não está funcionando corretamente.
+
+No seu controller `getAgenteDoCaso`, você faz:
+
+```js
+const getAgenteDoCaso = (req, res, next) => {
+    const { caso_id } = req.params;
+    try {
+        const caso = casosRepository.findById(caso_id);
+        if (!caso) {
+            throw new ApiError('Caso não encontrado', 404);
+        }
+        
+        const agente = agentesRepository.findById(caso.agente_id);
+        if (!agente) {
+            throw new ApiError('Agente do caso não encontrado', 404);
+        }
+        
+        res.status(200).json(agente);
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return next(error);
+        }
+        next(new ApiError('Erro ao buscar agente do caso', 500));
+    }
+};
+```
+
+Isso está correto na teoria, mas verifique se a rota está realmente sendo chamada no `casosRoutes.js` e se o parâmetro `caso_id` está correto.
+
+**Dica:** Teste esse endpoint isoladamente com ferramentas como Postman ou Insomnia para garantir que está funcionando.
 
 ---
 
-Eduarda, seu trabalho está muito próximo do ideal! Com esses ajustes, sua API vai ficar mais sólida, segura e profissional. Continue praticando e explorando as possibilidades do Node.js e Express! Estou aqui torcendo pelo seu sucesso e pronto para ajudar sempre que precisar! 💪✨
+### 5. Organização do projeto está ótima!
 
-Um abraço virtual e até a próxima! 🤗🚓👩‍💻
+Sua estrutura de diretórios está alinhada com o que esperamos:
+
+```
+.
+├── controllers
+│   ├── agentesController.js
+│   └── casosController.js
+├── repositories
+│   ├── agentesRepository.js
+│   └── casosRepository.js
+├── routes
+│   ├── agentesRoutes.js
+│   └── casosRoutes.js
+├── utils
+│   ├── agentesValidation.js
+│   ├── casosValidation.js
+│   └── errorHandler.js
+├── docs
+│   └── swagger.js
+├── server.js
+├── package.json
+```
+
+Parabéns por manter essa organização! Isso ajuda demais na escalabilidade do projeto.
+
+---
+
+## 📚 Recursos que Recomendo para Você Estudar
+
+- **Express.js e Rotas:**  
+  https://expressjs.com/pt-br/guide/routing.html  
+  (Para entender melhor como organizar e criar rotas com `express.Router()`.)
+
+- **Validação de Dados com Zod e tratamento de erros:**  
+  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_  
+  (Para garantir que seus schemas validem corretamente e você trate erros 400 com mensagens claras.)
+
+- **Status HTTP e boas práticas em APIs REST:**  
+  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400  
+  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404  
+  (Para entender quando usar cada código e retornar respostas adequadas.)
+
+- **Manipulação de Arrays em JavaScript:**  
+  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI  
+  (Para aprimorar filtros, buscas e ordenações em listas na memória.)
+
+---
+
+## ✨ Resumo dos Principais Pontos para Melhorar
+
+- ❌ **Bloquear atualização do campo `id`** nos payloads PUT e PATCH para agentes e casos.
+- ❌ **Garantir que payloads incompletos ou mal formatados retornem 400**, não 404, especialmente em métodos PUT.
+- ❌ **Aprimorar filtro de busca por palavra-chave** para evitar erros com dados vazios ou tipos inadequados.
+- ❌ **Verificar funcionamento do endpoint `/casos/:caso_id/agente`** para garantir que retorna o agente correto.
+- ✅ Manter a excelente organização do projeto e o uso de Zod para validação.
+- ✅ Continuar investindo em tratamento de erros customizados e mensagens claras.
+
+---
+
+## Para Finalizar 🚀
+
+Eduarda, você está muito bem encaminhada! Seu código mostra que você já domina conceitos importantes de Node.js, Express e arquitetura de APIs REST. Com pequenos ajustes na validação e tratamento de erros, seu projeto vai ficar ainda mais robusto e alinhado com as melhores práticas. Continue praticando e explorando as dicas e recursos que te passei aqui — isso vai te levar longe! 💪✨
+
+Se precisar de ajuda para implementar algum desses pontos, só me chamar! Estou aqui para te apoiar nessa jornada de aprendizado. Vamos juntos! 👩‍💻👨‍💻
+
+Um abraço de Code Buddy! 🤖❤️
+
+---
+
+**PS:** Não esqueça de testar seus endpoints com ferramentas como Postman para garantir que tudo está respondendo com os status e dados esperados. Isso ajuda muito a encontrar pequenos detalhes antes de entregar. 😉
+
+---
+
+Até a próxima revisão! 🌟
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
