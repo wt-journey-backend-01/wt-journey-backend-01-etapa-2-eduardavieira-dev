@@ -89,6 +89,34 @@ router.get('/', casosController.getCasos);
 
 /**
  * @swagger
+ * /casos/{caso_id}/agente:
+ *   get:
+ *     summary: Buscar agente responsável por um caso
+ *     tags: [Casos]
+ *     parameters:
+ *       - in: path
+ *         name: caso_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do caso
+ *     responses:
+ *       200:
+ *         description: Agente encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Agente'
+ *       404:
+ *         description: Caso não encontrado ou agente não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/:caso_id/agente', casosController.getAgenteDoCaso);
+
+/**
+ * @swagger
  * /casos/{id}:
  *   get:
  *     summary: Buscar caso por ID
@@ -291,34 +319,6 @@ router.patch('/:id', casosController.partialUpdateCaso);
  *         description: Erro interno do servidor
  */
 router.delete('/:id', casosController.deleteCaso);
-
-/**
- * @swagger
- * /casos/{caso_id}/agente:
- *   get:
- *     summary: Buscar agente responsável por um caso
- *     tags: [Casos]
- *     parameters:
- *       - in: path
- *         name: caso_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do caso
- *     responses:
- *       200:
- *         description: Agente encontrado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Agente'
- *       404:
- *         description: Caso não encontrado ou agente não encontrado
- *       500:
- *         description: Erro interno do servidor
- */
-router.get('/:caso_id/agente', casosController.getAgenteDoCaso);
 
 // Exporta o router para ser usado no servidor principal
 module.exports = router;

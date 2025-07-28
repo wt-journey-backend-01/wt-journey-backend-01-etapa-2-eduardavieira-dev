@@ -1,6 +1,7 @@
 const casosRepository = require('../repositories/casosRepository');
 const agentesRepository = require('../repositories/agentesRepository');
-const { casoSchema } = require('../utils/casosValidation');
+const { casoSchema, formatZodError } = require('../utils/casosValidation');
+const { ZodError } = require('zod');
 
 class ApiError extends Error {
     constructor(message, statusCode = 500) {
@@ -29,8 +30,8 @@ const getCasos = (req, res, next) => {
         if (q) {
             const searchTerm = q.toLowerCase();
             casos = casos.filter(caso => 
-                caso.titulo.toLowerCase().includes(searchTerm) ||
-                caso.descricao.toLowerCase().includes(searchTerm)
+                (typeof caso.titulo === 'string' && caso.titulo.toLowerCase().includes(searchTerm)) ||
+                (typeof caso.descricao === 'string' && caso.descricao.toLowerCase().includes(searchTerm))
             );
         }
         
@@ -82,8 +83,9 @@ const createCaso = (req, res, next) => {
 
         res.status(201).json(novoCaso);
     } catch (error) {
-        if (error.name === 'ZodError') {
-            return next(error);
+        if (error instanceof ZodError) {
+            const formattedError = formatZodError(error);
+            return res.status(400).json(formattedError);
         }
         if (error instanceof ApiError) {
             return next(error);
@@ -91,12 +93,14 @@ const createCaso = (req, res, next) => {
         next(new ApiError('Erro ao criar caso', 500));
     }
 };
-
 const updateCaso = (req, res, next) => {
     const { id } = req.params;
     try {
-        const { titulo, descricao, status, agente_id } = req.body;
-        
+        const { titulo, descricao, status, agente_id, ...rest } = req.body;
+
+        // Protege contra alteração do id
+        if ('id' in rest) delete rest.id;
+
         // Verificar se o agente existe antes de atualizar o caso (se agente_id foi fornecido)
         if (agente_id) {
             const agenteExiste = agentesRepository.findById(agente_id);
@@ -104,13 +108,17 @@ const updateCaso = (req, res, next) => {
                 throw new ApiError('Agente não encontrado. Verifique se o agente_id é válido.', 404);
             }
         }
-        
+
         const dadosRecebidos = {
             titulo,
             descricao,
             status: status?.toLowerCase(),
             agente_id
         };
+
+        // Remove id caso venha no payload
+        delete dadosRecebidos.id;
+
         const data = casoSchema.parse(dadosRecebidos);
         const casoAtualizado = casosRepository.update(id, data);
 
@@ -122,8 +130,9 @@ const updateCaso = (req, res, next) => {
             data: casoAtualizado
         });
     } catch (error) {
-        if (error.name === 'ZodError') {
-            return next(error);
+        if (error instanceof ZodError) {
+            const formattedError = formatZodError(error);
+            return res.status(400).json(formattedError);
         }
         if (error instanceof ApiError) {
             return next(error);
@@ -135,7 +144,10 @@ const updateCaso = (req, res, next) => {
 const partialUpdateCaso = (req, res, next) => {
     const { id } = req.params;
     try {
-        const { titulo, descricao, status, agente_id } = req.body;
+        const { titulo, descricao, status, agente_id, ...rest } = req.body;
+
+        // Protege contra alteração do id
+        if ('id' in rest) delete rest.id;
 
         const dadosRecebidos = {};
         if (titulo !== undefined) dadosRecebidos.titulo = titulo;
@@ -149,7 +161,10 @@ const partialUpdateCaso = (req, res, next) => {
             dadosRecebidos.agente_id = agente_id;
         }
 
-        const data = casoSchema.partialParse(dadosRecebidos);
+        // Remove id caso venha no payload
+        delete dadosRecebidos.id;
+
+        const data = casoSchema.partial().parse(dadosRecebidos);
 
         const casoAtualizado = casosRepository.partialUpdate(id, data);
 
@@ -163,8 +178,9 @@ const partialUpdateCaso = (req, res, next) => {
         });
 
     } catch (error) {
-        if (error.name === 'ZodError') {
-            return next(error);
+        if (error instanceof ZodError) {
+            const formattedError = formatZodError(error);
+            return res.status(400).json(formattedError);
         }
         if (error instanceof ApiError) {
             return next(error);

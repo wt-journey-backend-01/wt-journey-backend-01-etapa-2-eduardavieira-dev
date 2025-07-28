@@ -1,5 +1,6 @@
-const agenteRepository = require('../repositories/agentesRepository');
-const { agenteSchema } = require('../utils/agentesValidation')
+const agentesRepository = require('../repositories/agentesRepository');
+const { agenteSchema, formatZodError } = require('../utils/agentesValidation');
+const { ZodError } = require('zod');
 
 class ApiError extends Error {
     constructor(message, statusCode = 500) {
@@ -12,18 +13,22 @@ class ApiError extends Error {
 const getAgentes = (req, res, next) => {
     try {
         const { cargo, sort } = req.query;
-        let agentes = agenteRepository.findAll();
-        
+        let agentes = agentesRepository.findAll();
+
         if (cargo) {
             agentes = agentes.filter(agente => 
                 agente.cargo.toLowerCase() === cargo.toLowerCase()
             );
         }
         
-        if (sort === 'dataDeIncorporacao') {
-            agentes = agentes.sort((a, b) => 
-                new Date(a.dataDeIncorporacao) - new Date(b.dataDeIncorporacao)
-            );
+        if (sort) {
+            const ordem = sort.startsWith('-') ? -1 : 1;
+            const campo = sort.replace('-', '');
+            if (campo === 'dataDeIncorporacao') {
+                agentes = agentes.sort((a, b) => 
+                    ordem * (new Date(a.dataDeIncorporacao) - new Date(b.dataDeIncorporacao))
+                );
+            }
         }
         
         res.status(200).json(agentes);
@@ -35,7 +40,7 @@ const getAgentes = (req, res, next) => {
 const getAgenteById = (req, res, next) => {
     const { id } = req.params;
     try {
-        const agente = agenteRepository.findById(id);
+        const agente = agentesRepository.findById(id);
         if (!agente) {
             throw new ApiError('Agente não encontrado', 404);
         }
@@ -60,18 +65,25 @@ const createAgente = (req, res, next) => {
             nome,
             dataDeIncorporacao: new Date(dataDeIncorporacao),
             cargo: cargo?.toLowerCase()
-        }
+        };
 
         if (isNaN(dadosRecebidos.dataDeIncorporacao.getTime())) {
             throw new ApiError('Data de incorporação inválida', 400);
+        }
+
+        const hoje = new Date();
+
+        if (dadosRecebidos.dataDeIncorporacao > hoje) {
+            throw new ApiError('Data de incorporação não pode ser no futuro', 400);
         }
 
         const data = agenteSchema.parse(dadosRecebidos);
         const novoAgente = agenteRepository.create(data);
         res.status(201).json(novoAgente);
     } catch (error) {
-        if (error.name === 'ZodError') {
-            return next(error); 
+        if (error instanceof ZodError) {
+            const formattedError = formatZodError(error);
+            return res.status(400).json(formattedError);
         }
         if (error instanceof ApiError) {
             return next(error);
@@ -100,8 +112,9 @@ const updateAgente = (req, res, next) => {
             data: agenteAtualizado
         });
     } catch (error) {
-        if (error.name === 'ZodError') {
-            return next(error);
+        if (error instanceof ZodError) {
+            const formattedError = formatZodError(error);
+            return res.status(400).json(formattedError);
         }
         if (error instanceof ApiError) {
             return next(error);
@@ -120,9 +133,9 @@ const partialUpdateAgente = (req, res, next) => {
         if (dataDeIncorporacao !== undefined) dadosRecebidos.dataDeIncorporacao = new Date(dataDeIncorporacao);
         if (cargo !== undefined) dadosRecebidos.cargo = cargo.toLowerCase();
 
-        const data = agenteSchema.partialParse(dadosRecebidos);
+        const data = agenteSchema.partial().parse(dadosRecebidos);
 
-        const agenteAtualizado = agenteRepository.partialUpdate(id, data);
+        const agenteAtualizado = agentesRepository.partialUpdate(id, data);
 
         if (!agenteAtualizado) {
             return next(new ApiError('Agente não encontrado', 404));
@@ -134,8 +147,9 @@ const partialUpdateAgente = (req, res, next) => {
         });
 
     } catch (error) {
-        if (error.name === 'ZodError') {
-            return next(error);
+        if (error instanceof ZodError) {
+            const formattedError = formatZodError(error);
+            return res.status(400).json(formattedError);
         }
         if (error instanceof ApiError) {
             return next(error);
@@ -147,7 +161,7 @@ const partialUpdateAgente = (req, res, next) => {
 const deleteAgente = (req, res, next) => {
     const { id } = req.params;
     try {
-        const agenteDeletado = agenteRepository.remove(id);
+        const agenteDeletado = agentesRepository.remove(id);
         if (!agenteDeletado) {
             throw new ApiError('Agente não encontrado', 404);
         }

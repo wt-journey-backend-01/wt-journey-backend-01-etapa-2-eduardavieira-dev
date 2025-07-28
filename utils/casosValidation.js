@@ -11,9 +11,17 @@ const casoSchema = z.object({
     .uuid({ message: 'ID do agente deve ser um UUID válido' }),
 })
 
-// Adiciona método para validação parcial
-casoSchema.partialParse = (data) => {
-    return casoSchema.partial().parse(data);
+// Função para transformar erros Zod em mensagens amigáveis
+const formatZodError = (error) => {
+    const errors = error.errors.map(err => ({
+        campo: err.path.join('.'),
+        mensagem: err.message
+    }));
+    
+    return {
+        erro: 'Dados inválidos',
+        detalhes: errors
+    };
 };
 
-module.exports = { casoSchema }
+module.exports = { casoSchema, formatZodError }
