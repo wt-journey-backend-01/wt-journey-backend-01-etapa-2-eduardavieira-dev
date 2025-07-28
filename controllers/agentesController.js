@@ -108,8 +108,12 @@ const createAgente = (req, res, next) => {
 const updateAgente = (req, res, next) => {
     const { id } = req.params;
     try {
-        const { id: idDoPayload, ...dadosSemId } = req.body; // Remove id do payload
-        const { nome, dataDeIncorporacao, cargo } = dadosSemId;
+        // Rejeitar se payload contém id
+        if ('id' in req.body) {
+            return res.status(400).json({ message: 'Não é permitido alterar o campo id' });
+        }
+
+        const { nome, dataDeIncorporacao, cargo } = req.body;
         
         const dadosRecebidos = {
             nome,
@@ -141,8 +145,12 @@ const updateAgente = (req, res, next) => {
 const partialUpdateAgente = (req, res, next) => {
     const { id } = req.params;
     try {
-        const { id: idDoPayload, ...dadosSemId } = req.body; // Remove id do payload
-        const { nome, dataDeIncorporacao, cargo } = dadosSemId;
+        // Rejeitar se payload contém id
+        if ('id' in req.body) {
+            return res.status(400).json({ message: 'Não é permitido alterar o campo id' });
+        }
+
+        const { nome, dataDeIncorporacao, cargo } = req.body;
 
         const dadosRecebidos = {};
         if (nome !== undefined) dadosRecebidos.nome = nome;

@@ -28,10 +28,10 @@ const getCasos = (req, res, next) => {
         
         // Buscar por termo se fornecido
         if (q) {
-            const searchTerm = q.toLowerCase();
+            const searchTerm = q.trim().toLowerCase();
             casos = casos.filter(caso => 
-                caso.titulo.toLowerCase().includes(searchTerm) ||
-                caso.descricao.toLowerCase().includes(searchTerm)
+                (caso.titulo && caso.titulo.toLowerCase().includes(searchTerm)) ||
+                (caso.descricao && caso.descricao.toLowerCase().includes(searchTerm))
             );
         }
         
@@ -96,8 +96,12 @@ const createCaso = (req, res, next) => {
 const updateCaso = (req, res, next) => {
     const { id } = req.params;
     try {
-        const { id: idDoPayload, ...dadosSemId } = req.body; // Remove id do payload
-        const { titulo, descricao, status, agente_id } = dadosSemId;
+        // Rejeitar se payload contém id
+        if ('id' in req.body) {
+            return res.status(400).json({ message: 'Não é permitido alterar o campo id' });
+        }
+
+        const { titulo, descricao, status, agente_id } = req.body;
 
         // Verificar se o agente existe antes de atualizar o caso (se agente_id foi fornecido)
         if (agente_id) {
@@ -139,8 +143,12 @@ const updateCaso = (req, res, next) => {
 const partialUpdateCaso = (req, res, next) => {
     const { id } = req.params;
     try {
-        const { id: idDoPayload, ...dadosSemId } = req.body; // Remove id do payload
-        const { titulo, descricao, status, agente_id } = dadosSemId;
+        // Rejeitar se payload contém id
+        if ('id' in req.body) {
+            return res.status(400).json({ message: 'Não é permitido alterar o campo id' });
+        }
+
+        const { titulo, descricao, status, agente_id } = req.body;
 
         const dadosRecebidos = {};
         if (titulo !== undefined) dadosRecebidos.titulo = titulo;
