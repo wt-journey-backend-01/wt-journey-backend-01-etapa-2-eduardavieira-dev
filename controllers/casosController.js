@@ -30,8 +30,8 @@ const getCasos = (req, res, next) => {
         if (q) {
             const searchTerm = q.toLowerCase();
             casos = casos.filter(caso => 
-                (typeof caso.titulo === 'string' && caso.titulo.toLowerCase().includes(searchTerm)) ||
-                (typeof caso.descricao === 'string' && caso.descricao.toLowerCase().includes(searchTerm))
+                caso.titulo.toLowerCase().includes(searchTerm) ||
+                caso.descricao.toLowerCase().includes(searchTerm)
             );
         }
         
@@ -188,6 +188,7 @@ const partialUpdateCaso = (req, res, next) => {
         next(new ApiError('Erro ao atualizar caso', 500));
     }
 };
+
 
 const deleteCaso = (req, res, next) => {
     const { id } = req.params;

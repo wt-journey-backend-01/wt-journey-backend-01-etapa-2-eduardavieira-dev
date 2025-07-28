@@ -14,23 +14,28 @@ const getAgentes = (req, res, next) => {
     try {
         const { cargo, sort } = req.query;
         let agentes = agentesRepository.findAll();
-
+        
         if (cargo) {
-            agentes = agentes.filter(agente => 
-                agente.cargo.toLowerCase() === cargo.toLowerCase()
+            agentes = agentes.filter(agente =>
+            typeof agente.cargo === 'string' &&
+            agente.cargo.toLowerCase() === cargo.toLowerCase()
             );
         }
-        
+
         if (sort) {
             const ordem = sort.startsWith('-') ? -1 : 1;
             const campo = sort.replace('-', '');
             if (campo === 'dataDeIncorporacao') {
-                agentes = agentes.sort((a, b) => 
-                    ordem * (new Date(a.dataDeIncorporacao) - new Date(b.dataDeIncorporacao))
-                );
+                agentes = agentes.sort((a, b) => {
+                    const dateA = new Date(a.dataDeIncorporacao);
+                    const dateB = new Date(b.dataDeIncorporacao);
+                    if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
+                    if (isNaN(dateA.getTime())) return 1 * ordem;
+                    if (isNaN(dateB.getTime())) return -1 * ordem;
+                    return ordem * (dateA - dateB);
+                });
             }
         }
-        
         res.status(200).json(agentes);
     } catch (error) {
         next(new ApiError('Erro ao buscar agentes'));
@@ -61,24 +66,25 @@ const createAgente = (req, res, next) => {
             throw new ApiError('Campos obrigatórios: nome, dataDeIncorporacao, cargo', 400);
         }
 
-        const dadosRecebidos = {
-            nome,
-            dataDeIncorporacao: new Date(dataDeIncorporacao),
-            cargo: cargo?.toLowerCase()
-        };
+        const dataDeIncorporacaoDate = new Date(dataDeIncorporacao);
 
-        if (isNaN(dadosRecebidos.dataDeIncorporacao.getTime())) {
+        if (isNaN(dataDeIncorporacaoDate.getTime())) {
             throw new ApiError('Data de incorporação inválida', 400);
         }
 
-        const hoje = new Date();
-
-        if (dadosRecebidos.dataDeIncorporacao > hoje) {
-            throw new ApiError('Data de incorporação não pode ser no futuro', 400);
+        const now = new Date();
+        if (dataDeIncorporacaoDate > now) {
+            throw new ApiError('Data de incorporação não pode ser futura', 400);
         }
 
+        const dadosRecebidos = {
+            nome,
+            dataDeIncorporacao: dataDeIncorporacao,
+            cargo: cargo?.toLowerCase()
+        };
+
         const data = agenteSchema.parse(dadosRecebidos);
-        const novoAgente = agenteRepository.create(data);
+        const novoAgente = agentesRepository.create(data);
         res.status(201).json(novoAgente);
     } catch (error) {
         if (error instanceof ZodError) {
@@ -91,18 +97,17 @@ const createAgente = (req, res, next) => {
         next(new ApiError('Erro ao criar agente', 500));
     }
 };
-
 const updateAgente = (req, res, next) => {
     const { id } = req.params;
     try {
         const { nome, dataDeIncorporacao, cargo } = req.body;
         const dadosRecebidos = {
             nome,
-            dataDeIncorporacao: new Date(dataDeIncorporacao),
+            dataDeIncorporacao: dataDeIncorporacao,
             cargo: cargo?.toLowerCase()
         };
         const data = agenteSchema.parse(dadosRecebidos);
-        const agenteAtualizado = agenteRepository.update(id, data);
+        const agenteAtualizado = agentesRepository.update(id, data);
 
         if (!agenteAtualizado) {
             throw new ApiError('Agente não encontrado', 404);
@@ -130,7 +135,7 @@ const partialUpdateAgente = (req, res, next) => {
 
         const dadosRecebidos = {};
         if (nome !== undefined) dadosRecebidos.nome = nome;
-        if (dataDeIncorporacao !== undefined) dadosRecebidos.dataDeIncorporacao = new Date(dataDeIncorporacao);
+        if (dataDeIncorporacao !== undefined) dadosRecebidos.dataDeIncorporacao = dataDeIncorporacao;
         if (cargo !== undefined) dadosRecebidos.cargo = cargo.toLowerCase();
 
         const data = agenteSchema.partial().parse(dadosRecebidos);

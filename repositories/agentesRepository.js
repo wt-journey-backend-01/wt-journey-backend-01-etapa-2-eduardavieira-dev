@@ -4,14 +4,26 @@ const agentes = [
     {
         id: "550e8400-e29b-41d4-a716-446655440001",
         nome: 'Agente Um',
-        dataDeIncorporacao: new Date('2022-01-15'),
-        cargo: 'Supervisor'
+        dataDeIncorporacao: '2022-01-15',
+        cargo: 'supervisor'
     },
     {
         id: "550e8400-e29b-41d4-a716-446655440002",
         nome: 'Agente Dois',
-        dataDeIncorporacao: new Date('2023-03-10'),
-        cargo: 'Analista'
+        dataDeIncorporacao: '2023-03-10',
+        cargo: 'analista'
+    },
+    {
+        id: "550e8400-e29b-41d4-a716-446655440003",
+        nome: 'Agente Três',
+        dataDeIncorporacao: '2021-05-20',
+        cargo: 'delegado'
+    },
+    {
+        id: "550e8400-e29b-41d4-a716-446655440004",
+        nome: 'Agente Quatro',
+        dataDeIncorporacao: '2024-02-08',
+        cargo: 'investigador'
     }
 ];
 
@@ -41,7 +53,7 @@ const update = (id, newData) => {
     if (!hasAllFields) return null; 
 
     agente.nome = newData.nome;
-    agente.dataDeIncorporacao = new Date(newData.dataDeIncorporacao);
+    agente.dataDeIncorporacao = newData.dataDeIncorporacao;
     agente.cargo = newData.cargo;
 
     return agente;
