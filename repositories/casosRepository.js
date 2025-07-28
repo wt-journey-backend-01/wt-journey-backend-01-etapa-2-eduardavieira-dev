@@ -45,14 +45,17 @@ const update = (id, newData) => {
     const caso = casos.find(caso => caso.id === id);
     if (!caso) return null;
 
+    // Ignorar qualquer id que venha em newData
+    const { id: _, ...dadosSemId } = newData;
+
     const requiredFields = ['titulo', 'descricao', 'status', 'agente_id'];
-    const hasAllFields = requiredFields.every(field => newData.hasOwnProperty(field));
+    const hasAllFields = requiredFields.every(field => dadosSemId.hasOwnProperty(field));
     if (!hasAllFields) return null; 
 
-    caso.titulo = newData.titulo;
-    caso.descricao = newData.descricao;
-    caso.status = newData.status;
-    caso.agente_id = newData.agente_id;
+    caso.titulo = dadosSemId.titulo;
+    caso.descricao = dadosSemId.descricao;
+    caso.status = dadosSemId.status;
+    caso.agente_id = dadosSemId.agente_id;
 
     return caso;
 };
@@ -61,7 +64,10 @@ const partialUpdate = (id, data) => {
     const caso = casos.find(caso => caso.id === id);
     if (!caso) return null;
 
-    Object.assign(caso, data);
+    // Ignorar qualquer id que venha em data
+    const { id: _, ...dadosSemId } = data;
+
+    Object.assign(caso, dadosSemId);
     return caso;
 };
 

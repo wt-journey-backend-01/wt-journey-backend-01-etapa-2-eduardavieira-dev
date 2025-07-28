@@ -32,8 +32,16 @@ const getAgentes = (req, res, next) => {
                     if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
                     if (isNaN(dateA.getTime())) return 1 * ordem;
                     if (isNaN(dateB.getTime())) return -1 * ordem;
-                    return ordem * (dateA - dateB);
+                    return ordem * (dateA.getTime() - dateB.getTime());
                 });
+            } else if (campo === 'nome') {
+                agentes = agentes.sort((a, b) => 
+                    ordem * a.nome.localeCompare(b.nome)
+                );
+            } else if (campo === 'cargo') {
+                agentes = agentes.sort((a, b) => 
+                    ordem * a.cargo.localeCompare(b.cargo)
+                );
             }
         }
         res.status(200).json(agentes);
@@ -100,7 +108,9 @@ const createAgente = (req, res, next) => {
 const updateAgente = (req, res, next) => {
     const { id } = req.params;
     try {
-        const { nome, dataDeIncorporacao, cargo } = req.body;
+        const { id: idDoPayload, ...dadosSemId } = req.body; // Remove id do payload
+        const { nome, dataDeIncorporacao, cargo } = dadosSemId;
+        
         const dadosRecebidos = {
             nome,
             dataDeIncorporacao: dataDeIncorporacao,
@@ -131,7 +141,8 @@ const updateAgente = (req, res, next) => {
 const partialUpdateAgente = (req, res, next) => {
     const { id } = req.params;
     try {
-        const { nome, dataDeIncorporacao, cargo } = req.body;
+        const { id: idDoPayload, ...dadosSemId } = req.body; // Remove id do payload
+        const { nome, dataDeIncorporacao, cargo } = dadosSemId;
 
         const dadosRecebidos = {};
         if (nome !== undefined) dadosRecebidos.nome = nome;

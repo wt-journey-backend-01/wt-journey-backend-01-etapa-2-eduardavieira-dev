@@ -48,13 +48,16 @@ const update = (id, newData) => {
     const agente = agentes.find(agente => agente.id === id);
     if (!agente) return null;
 
+    // Ignorar qualquer id que venha em newData
+    const { id: _, ...dadosSemId } = newData;
+
     const requiredFields = ['nome', 'dataDeIncorporacao', 'cargo'];
-    const hasAllFields = requiredFields.every(field => newData.hasOwnProperty(field));
+    const hasAllFields = requiredFields.every(field => dadosSemId.hasOwnProperty(field));
     if (!hasAllFields) return null; 
 
-    agente.nome = newData.nome;
-    agente.dataDeIncorporacao = newData.dataDeIncorporacao;
-    agente.cargo = newData.cargo;
+    agente.nome = dadosSemId.nome;
+    agente.dataDeIncorporacao = dadosSemId.dataDeIncorporacao;
+    agente.cargo = dadosSemId.cargo;
 
     return agente;
 }
@@ -63,7 +66,10 @@ const partialUpdate = (id, data) => {
     const agente = agentes.find(agente => agente.id === id);
     if (!agente) return null;
 
-    Object.assign(agente, data);
+    // Ignorar qualquer id que venha em data
+    const { id: _, ...dadosSemId } = data;
+
+    Object.assign(agente, dadosSemId);
     return agente;
 };
 

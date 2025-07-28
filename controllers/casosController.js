@@ -96,10 +96,8 @@ const createCaso = (req, res, next) => {
 const updateCaso = (req, res, next) => {
     const { id } = req.params;
     try {
-        const { titulo, descricao, status, agente_id, ...rest } = req.body;
-
-        // Protege contra alteração do id
-        if ('id' in rest) delete rest.id;
+        const { id: idDoPayload, ...dadosSemId } = req.body; // Remove id do payload
+        const { titulo, descricao, status, agente_id } = dadosSemId;
 
         // Verificar se o agente existe antes de atualizar o caso (se agente_id foi fornecido)
         if (agente_id) {
@@ -115,9 +113,6 @@ const updateCaso = (req, res, next) => {
             status: status?.toLowerCase(),
             agente_id
         };
-
-        // Remove id caso venha no payload
-        delete dadosRecebidos.id;
 
         const data = casoSchema.parse(dadosRecebidos);
         const casoAtualizado = casosRepository.update(id, data);
@@ -144,10 +139,8 @@ const updateCaso = (req, res, next) => {
 const partialUpdateCaso = (req, res, next) => {
     const { id } = req.params;
     try {
-        const { titulo, descricao, status, agente_id, ...rest } = req.body;
-
-        // Protege contra alteração do id
-        if ('id' in rest) delete rest.id;
+        const { id: idDoPayload, ...dadosSemId } = req.body; // Remove id do payload
+        const { titulo, descricao, status, agente_id } = dadosSemId;
 
         const dadosRecebidos = {};
         if (titulo !== undefined) dadosRecebidos.titulo = titulo;
@@ -160,9 +153,6 @@ const partialUpdateCaso = (req, res, next) => {
             }
             dadosRecebidos.agente_id = agente_id;
         }
-
-        // Remove id caso venha no payload
-        delete dadosRecebidos.id;
 
         const data = casoSchema.partial().parse(dadosRecebidos);
 
