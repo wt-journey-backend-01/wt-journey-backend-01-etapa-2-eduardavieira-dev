@@ -20,33 +20,29 @@ const getAgentes = (req, res, next) => {
             typeof agente.cargo === 'string' &&
             agente.cargo.toLowerCase() === cargo.toLowerCase()
             );
-        }
-
-        if (sort) {
-            const ordem = sort.startsWith('-') ? -1 : 1;
-            const campo = sort.replace('-', '');
-            if (campo === 'dataDeIncorporacao') {
-                agentes = agentes.sort((a, b) => {
-                    const dateA = new Date(a.dataDeIncorporacao);
-                    const dateB = new Date(b.dataDeIncorporacao);
-                    if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
-                    if (isNaN(dateA.getTime())) return 1 * ordem;
-                    if (isNaN(dateB.getTime())) return -1 * ordem;
-                    return ordem * (dateA.getTime() - dateB.getTime());
-                });
-            } else if (campo === 'nome') {
-                agentes = agentes.sort((a, b) => 
-                    ordem * a.nome.localeCompare(b.nome)
-                );
-            } else if (campo === 'cargo') {
-                agentes = agentes.sort((a, b) => 
-                    ordem * a.cargo.localeCompare(b.cargo)
-                );
+            
+            if (agentes.length === 0) {
+                throw new ApiError(`Agentes com cargo "${cargo}" não encontrados.`, 404);
             }
         }
+
+        if (sort === 'dataDeIncorporacao' || sort === '-dataDeIncorporacao') {
+            const direction = sort.startsWith('-') ? -1 : 1;
+            agentes.sort((a, b) => {
+            const dateA = new Date(a.dataDeIncorporacao);
+            const dateB = new Date(b.dataDeIncorporacao);
+            if (dateA < dateB) return -1 * direction;
+            if (dateA > dateB) return 1 * direction;
+            return 0;
+            });
+        }
+
         res.status(200).json(agentes);
     } catch (error) {
-        next(new ApiError('Erro ao buscar agentes'));
+        if (error instanceof ApiError) {
+            return next(error);
+        }
+        next(new ApiError('Erro ao buscar agentes', 500));
     }
 };
 
@@ -70,25 +66,10 @@ const createAgente = (req, res, next) => {
     try {
         const { nome, dataDeIncorporacao, cargo } = req.body;
 
-        if (!nome || !dataDeIncorporacao || !cargo) {
-            throw new ApiError('Campos obrigatórios: nome, dataDeIncorporacao, cargo', 400);
-        }
-
-        const dataDeIncorporacaoDate = new Date(dataDeIncorporacao);
-
-        if (isNaN(dataDeIncorporacaoDate.getTime())) {
-            throw new ApiError('Data de incorporação inválida', 400);
-        }
-
-        const now = new Date();
-        if (dataDeIncorporacaoDate > now) {
-            throw new ApiError('Data de incorporação não pode ser futura', 400);
-        }
-
         const dadosRecebidos = {
             nome,
             dataDeIncorporacao: dataDeIncorporacao,
-            cargo: cargo?.toLowerCase()
+            cargo
         };
 
         const data = agenteSchema.parse(dadosRecebidos);
@@ -118,7 +99,7 @@ const updateAgente = (req, res, next) => {
         const dadosRecebidos = {
             nome,
             dataDeIncorporacao: dataDeIncorporacao,
-            cargo: cargo?.toLowerCase()
+            cargo
         };
         const data = agenteSchema.parse(dadosRecebidos);
         const agenteAtualizado = agentesRepository.update(id, data);
@@ -155,11 +136,11 @@ const partialUpdateAgente = (req, res, next) => {
         const dadosRecebidos = {};
         if (nome !== undefined) dadosRecebidos.nome = nome;
         if (dataDeIncorporacao !== undefined) dadosRecebidos.dataDeIncorporacao = dataDeIncorporacao;
-        if (cargo !== undefined) dadosRecebidos.cargo = cargo.toLowerCase();
+        if (cargo !== undefined) dadosRecebidos.cargo = cargo;
 
         const data = agenteSchema.partial().parse(dadosRecebidos);
 
-        const agenteAtualizado = agentesRepository.partialUpdate(id, data);
+        const agenteAtualizado = agentesRepository.update(id, data);
 
         if (!agenteAtualizado) {
             return next(new ApiError('Agente não encontrado', 404));

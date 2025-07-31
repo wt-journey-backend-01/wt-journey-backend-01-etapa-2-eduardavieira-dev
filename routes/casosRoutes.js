@@ -86,16 +86,15 @@ const casosController = require('../controllers/casosController');
  *         description: Erro interno do servidor
  */
 router.get('/', casosController.getCasos);
-
 /**
  * @swagger
- * /casos/{caso_id}/agente:
+ * /casos/{id}/agente:
  *   get:
  *     summary: Buscar agente responsável por um caso
  *     tags: [Casos]
  *     parameters:
  *       - in: path
- *         name: caso_id
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
@@ -113,7 +112,7 @@ router.get('/', casosController.getCasos);
  *       500:
  *         description: Erro interno do servidor
  */
-router.get('/:caso_id/agente', casosController.getAgenteDoCaso);
+router.get('/:id/agente', casosController.getAgenteDoCaso);
 
 /**
  * @swagger

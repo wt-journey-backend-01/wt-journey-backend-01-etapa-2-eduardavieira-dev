@@ -41,27 +41,16 @@ const create = (data) => {
     return novoCaso;
 }
 
-const update = (id, newData) => {
+const update = (id, data) => {
     const caso = casos.find(caso => caso.id === id);
+    
     if (!caso) return null;
 
-    const requiredFields = ['titulo', 'descricao', 'status', 'agente_id'];
-    const hasAllFields = requiredFields.every(field => newData.hasOwnProperty(field));
-    if (!hasAllFields) return null; 
+    caso.titulo = data.titulo;
+    caso.descricao = data.descricao;
+    caso.status = data.status;
+    caso.agente_id = data.agente_id;
 
-    caso.titulo = newData.titulo;
-    caso.descricao = newData.descricao;
-    caso.status = newData.status;
-    caso.agente_id = newData.agente_id;
-
-    return caso;
-};
-
-const partialUpdate = (id, data) => {
-    const caso = casos.find(caso => caso.id === id);
-    if (!caso) return null;
-
-    Object.assign(caso, data);
     return caso;
 };
 
@@ -77,7 +66,6 @@ module.exports = {
     findAll,
     findById,
     create,
-    partialUpdate,
     update,
     remove
 };

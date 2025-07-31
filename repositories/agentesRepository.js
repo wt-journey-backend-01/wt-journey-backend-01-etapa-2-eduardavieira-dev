@@ -44,26 +44,15 @@ const create = (data) => {
     return novoAgente;
 }
 
-const update = (id, newData) => {
-    const agente = agentes.find(agente => agente.id === id);
+const update = (id, data) => {
+    const agente = agentes.find(a => a.id === id);
+
     if (!agente) return null;
 
-    const requiredFields = ['nome', 'dataDeIncorporacao', 'cargo'];
-    const hasAllFields = requiredFields.every(field => newData.hasOwnProperty(field));
-    if (!hasAllFields) return null; 
+    agente.nome = data.nome;
+    agente.dataDeIncorporacao = data.dataDeIncorporacao;
+    agente.cargo = data.cargo;
 
-    agente.nome = newData.nome;
-    agente.dataDeIncorporacao = newData.dataDeIncorporacao;
-    agente.cargo = newData.cargo;
-
-    return agente;
-}
-
-const partialUpdate = (id, data) => {
-    const agente = agentes.find(agente => agente.id === id);
-    if (!agente) return null;
-
-    Object.assign(agente, data);
     return agente;
 };
 
@@ -80,6 +69,5 @@ module.exports = {
     findById,
     create,
     update,
-    partialUpdate,
     remove
 };

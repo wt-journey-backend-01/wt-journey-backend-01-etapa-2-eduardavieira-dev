@@ -29,10 +29,12 @@ const getCasos = (req, res, next) => {
         // Buscar por termo se fornecido
         if (q) {
             const searchTerm = q.trim().toLowerCase();
-            casos = casos.filter(caso => 
-                (caso.titulo && caso.titulo.toLowerCase().includes(searchTerm)) ||
-                (caso.descricao && caso.descricao.toLowerCase().includes(searchTerm))
-            );
+            if (searchTerm.length > 0) { 
+                casos = casos.filter(caso => 
+                    (caso.titulo && caso.titulo.toLowerCase().includes(searchTerm)) ||
+                    (caso.descricao && caso.descricao.toLowerCase().includes(searchTerm))
+                );
+            }
         }
         
         res.status(200).json(casos);
@@ -61,26 +63,23 @@ const createCaso = (req, res, next) => {
     try {
         const { titulo, descricao, status, agente_id } = req.body;
 
-        if (!titulo || !descricao || !agente_id) {
-            throw new ApiError('Campos obrigatórios: titulo, descricao, agente_id', 400);
-        }
+        const dadosRecebidos = {
+            titulo,
+            descricao,
+            status: status || 'aberto',
+            agente_id
+        };
 
-        const agenteExiste = agentesRepository.findById(agente_id);
+        // Validar primeiro com Zod
+        const data = casoSchema.parse(dadosRecebidos);
+        
+        // Depois verificar se o agente existe
+        const agenteExiste = agentesRepository.findById(data.agente_id);
         if (!agenteExiste) {
             throw new ApiError('Agente não encontrado. Verifique se o agente_id é válido.', 404);
         }
 
-        const dadosRecebidos = {
-            titulo,
-            descricao,
-            status: status?.toLowerCase() || 'aberto',
-            agente_id
-        };
-
-        const data = casoSchema.parse(dadosRecebidos);
         const novoCaso = casosRepository.create(data);
-    
-
         res.status(201).json(novoCaso);
     } catch (error) {
         if (error instanceof ZodError) {
@@ -103,22 +102,24 @@ const updateCaso = (req, res, next) => {
 
         const { titulo, descricao, status, agente_id } = req.body;
 
-        // Verificar se o agente existe antes de atualizar o caso (se agente_id foi fornecido)
-        if (agente_id) {
-            const agenteExiste = agentesRepository.findById(agente_id);
+        const dadosRecebidos = {
+            titulo,
+            descricao,
+            status,
+            agente_id
+        };
+
+        // Validar primeiro com Zod
+        const data = casoSchema.parse(dadosRecebidos);
+        
+        // Verificar se o agente existe se agente_id foi fornecido
+        if (data.agente_id) {
+            const agenteExiste = agentesRepository.findById(data.agente_id);
             if (!agenteExiste) {
                 throw new ApiError('Agente não encontrado. Verifique se o agente_id é válido.', 404);
             }
         }
 
-        const dadosRecebidos = {
-            titulo,
-            descricao,
-            status: status?.toLowerCase(),
-            agente_id
-        };
-
-        const data = casoSchema.parse(dadosRecebidos);
         const casoAtualizado = casosRepository.update(id, data);
 
         if (!casoAtualizado) {
@@ -153,18 +154,21 @@ const partialUpdateCaso = (req, res, next) => {
         const dadosRecebidos = {};
         if (titulo !== undefined) dadosRecebidos.titulo = titulo;
         if (descricao !== undefined) dadosRecebidos.descricao = descricao;
-        if (status !== undefined) dadosRecebidos.status = status.toLowerCase();
-        if (agente_id !== undefined) {
-            const agenteExiste = agentesRepository.findById(agente_id);
+        if (status !== undefined) dadosRecebidos.status = status;
+        if (agente_id !== undefined) dadosRecebidos.agente_id = agente_id;
+
+        // Validar primeiro com Zod
+        const data = casoSchema.partial().parse(dadosRecebidos);
+
+        // Verificar se o agente existe se agente_id foi fornecido
+        if (data.agente_id) {
+            const agenteExiste = agentesRepository.findById(data.agente_id);
             if (!agenteExiste) {
                 throw new ApiError('Agente não encontrado. Verifique se o agente_id é válido.', 404);
             }
-            dadosRecebidos.agente_id = agente_id;
         }
 
-        const data = casoSchema.partial().parse(dadosRecebidos);
-
-        const casoAtualizado = casosRepository.partialUpdate(id, data);
+        const casoAtualizado = casosRepository.update(id, data);
 
         if (!casoAtualizado) {
             return next(new ApiError('Caso não encontrado', 404));
@@ -205,9 +209,9 @@ const deleteCaso = (req, res, next) => {
 };
 
 const getAgenteDoCaso = (req, res, next) => {
-    const { caso_id } = req.params;
+    const { id } = req.params;
     try {
-        const caso = casosRepository.findById(caso_id);
+        const caso = casosRepository.findById(id);
         if (!caso) {
             throw new ApiError('Caso não encontrado', 404);
         }
