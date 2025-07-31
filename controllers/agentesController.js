@@ -27,13 +27,16 @@ const getAgentes = (req, res, next) => {
         }
 
         if (sort === 'dataDeIncorporacao' || sort === '-dataDeIncorporacao') {
+            if (agentes.length === 0) {
+                throw new ApiError('Nenhum agente encontrado para ordenar.', 404);
+            }
             const direction = sort.startsWith('-') ? -1 : 1;
             agentes.sort((a, b) => {
-            const dateA = new Date(a.dataDeIncorporacao);
-            const dateB = new Date(b.dataDeIncorporacao);
-            if (dateA < dateB) return -1 * direction;
-            if (dateA > dateB) return 1 * direction;
-            return 0;
+                const dateA = new Date(a.dataDeIncorporacao);
+                const dateB = new Date(b.dataDeIncorporacao);
+                if (dateA < dateB) return -1 * direction;
+                if (dateA > dateB) return 1 * direction;
+                return 0;
             });
         }
 

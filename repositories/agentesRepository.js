@@ -1,6 +1,6 @@
 const {v4 : uuidv4} = require('uuid');
 
-const agentes = [
+let agentes = [
     {
         id: "550e8400-e29b-41d4-a716-446655440001",
         nome: 'Agente Um',
@@ -45,15 +45,27 @@ const create = (data) => {
 }
 
 const update = (id, data) => {
-    const agente = agentes.find(a => a.id === id);
+    const index = agentes.findIndex(a => a.id === id);
+    if (index === -1) return null;
 
-    if (!agente) return null;
+    const agenteAtual = agentes[index];
+    
+    // Cria um novo objeto com os dados atualizados
+    const agenteAtualizado = {
+        id: agenteAtual.id,
+        nome: data.nome !== undefined ? data.nome : agenteAtual.nome,
+        dataDeIncorporacao: data.dataDeIncorporacao !== undefined ? data.dataDeIncorporacao : agenteAtual.dataDeIncorporacao,
+        cargo: data.cargo !== undefined ? data.cargo.toLowerCase() : agenteAtual.cargo
+    };
 
-    agente.nome = data.nome;
-    agente.dataDeIncorporacao = data.dataDeIncorporacao;
-    agente.cargo = data.cargo;
+    // Verifica se todos os campos obrigatórios estão presentes
+    if (!agenteAtualizado.nome || !agenteAtualizado.dataDeIncorporacao || !agenteAtualizado.cargo) {
+        return null;
+    }
 
-    return agente;
+    // Substitui o objeto antigo pelo novo
+    agentes[index] = agenteAtualizado;
+    return agenteAtualizado;
 };
 
 const remove = (id) =>{

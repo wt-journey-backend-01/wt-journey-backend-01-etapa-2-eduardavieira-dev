@@ -18,27 +18,46 @@ const getCasos = (req, res, next) => {
         
         if (agente_id) {
             casos = casos.filter(caso => caso.agente_id === agente_id);
+            if (casos.length === 0) {
+                throw new ApiError(`Casos com agente_id "${agente_id}" não encontrados.`, 404);
+            }
         }
         
         if (status) {
             casos = casos.filter(caso => 
                 caso.status.toLowerCase() === status.toLowerCase()
             );
+            if (casos.length === 0) {
+                throw new ApiError(`Casos com status "${status}" não encontrados.`, 404);
+            }
         }
         
         // Buscar por termo se fornecido
         if (q) {
             const searchTerm = q.trim().toLowerCase();
             if (searchTerm.length > 0) { 
-                casos = casos.filter(caso => 
-                    (caso.titulo && caso.titulo.toLowerCase().includes(searchTerm)) ||
-                    (caso.descricao && caso.descricao.toLowerCase().includes(searchTerm))
-                );
+                const casosFiltrados = casos.filter(caso => {
+                    const tituloLower = caso.titulo ? caso.titulo.toLowerCase() : '';
+                    const descricaoLower = caso.descricao ? caso.descricao.toLowerCase() : '';
+                    const termos = searchTerm.split(' ');
+                    
+                    return termos.every(termo => 
+                        tituloLower.includes(termo) || descricaoLower.includes(termo)
+                    );
+                });
+                
+                if (casosFiltrados.length === 0) {
+                    throw new ApiError(`Nenhum caso encontrado com o termo "${q}".`, 404);
+                }
+                casos = casosFiltrados;
             }
         }
         
         res.status(200).json(casos);
     } catch (error) {
+        if (error instanceof ApiError) {
+            return next(error);
+        }
         next(new ApiError('Erro ao buscar casos', 500));
     }
 };
@@ -213,12 +232,12 @@ const getAgenteDoCaso = (req, res, next) => {
     try {
         const caso = casosRepository.findById(id);
         if (!caso) {
-            throw new ApiError('Caso não encontrado', 404);
+            throw new ApiError(`Caso com ID ${id} não encontrado`, 404);
         }
         
         const agente = agentesRepository.findById(caso.agente_id);
         if (!agente) {
-            throw new ApiError('Agente do caso não encontrado', 404);
+            throw new ApiError(`Agente com ID ${caso.agente_id} não encontrado para o caso ${id}`, 404);
         }
         
         res.status(200).json(agente);

@@ -1,6 +1,6 @@
 const {v4 : uuidv4} = require('uuid');
 
-const casos = [
+let casos = [
     {
         id: "f5fb2ad5-22a8-4cb4-90f2-8733517a0d46",
         titulo: "homicidio",
@@ -43,13 +43,14 @@ const create = (data) => {
 
 const update = (id, data) => {
     const caso = casos.find(caso => caso.id === id);
-    
+
     if (!caso) return null;
 
-    caso.titulo = data.titulo;
-    caso.descricao = data.descricao;
-    caso.status = data.status;
-    caso.agente_id = data.agente_id;
+    // Atualiza apenas os campos que foram fornecidos
+    caso.titulo = data.titulo !== undefined ? data.titulo : caso.titulo;
+    caso.descricao = data.descricao !== undefined ? data.descricao : caso.descricao;
+    caso.status = data.status !== undefined ? data.status : caso.status;
+    caso.agente_id = data.agente_id !== undefined ? data.agente_id : caso.agente_id;
 
     return caso;
 };
